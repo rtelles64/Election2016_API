@@ -1,10 +1,12 @@
 import datetime
 import os
 
+from flask import jsonify, Flask, request
+
 from pprint import pprint
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import to_date, col
+from pyspark.sql.functions import to_date, col, date_format
 from pyspark.sql.types import (
     BooleanType, DateType, IntegerType, NumericType, StringType,
     StructField, StructType
@@ -184,8 +186,8 @@ test_df.createOrReplaceTempView('events')
 # Query the dataset :)
 test_query = spark.sql("""
     SELECT
-        Date, Actor1Name, Actor2Name, EventRootCode, EventCode,
-        QuadClass, GoldsteinScale, AvgTone, DateAdded, SourceURL
+        STRING(Date), Actor1Name, Actor2Name, EventRootCode, EventCode,
+        QuadClass, GoldsteinScale, AvgTone, STRING(DateAdded), SourceURL
     FROM events
     WHERE
         Actor1Name = 'PRESIDENT' AND GoldsteinScale < 0 AND IsRootEvent
@@ -194,11 +196,41 @@ test_query = spark.sql("""
 
 print("Running query...")
 start = time()
-for row in test_query.collect():
-    print(row, '\n')
+
+data_list = [{
+    'Date': date_format(row.Date, 'E dd MMM yyyy'),
+    'Actor1 Name': row.Actor1Name,
+    'Actor2 Name': row.Actor2Name,
+    'Event Root Code': row.EventRootCode,
+    'Event Code': row.EventCode,
+    'Quad Class': row.QuadClass,
+    'Goldstein Scale': row.GoldsteinScale,
+    'Average Tone': row.AvgTone,
+    'Date Added': row.DateAdded,
+    'Source URL': row.SourceURL
+} for row in test_query.collect()
+]
 end = time()
 print("Done!")
 print(f"Total time: {end-start:0.2f} sec")
 
 spark.stop()
+
+# Create/Start Flask app here
+app = Flask(__name__)
+
+@app.route('/')
+def run_test_query():
+    '''
+    Displays just a test query.
+    '''
+    # start = time()
+    return jsonify(Data=data_list)
+    # for row in test_query.collect():
+    #     print(row, '\n')
+    # end = time()
+
+if __name__ == '__main__':
+    app.debug = True
+    app.run(host='0.0.0.0', port=5000)
 
