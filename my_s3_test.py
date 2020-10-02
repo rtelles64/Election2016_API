@@ -198,7 +198,7 @@ print("Running query...")
 start = time()
 
 data_list = [{
-    'Date': date_format(row.Date, 'E dd MMM yyyy'),
+    'Date': row.Date,
     'Actor1 Name': row.Actor1Name,
     'Actor2 Name': row.Actor2Name,
     'Event Root Code': row.EventRootCode,
