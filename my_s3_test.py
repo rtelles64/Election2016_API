@@ -6,7 +6,7 @@ from flask import jsonify, Flask, request
 from pprint import pprint
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import to_date, col, date_format
+from pyspark.sql.functions import to_date, col, date_format, format_number
 from pyspark.sql.types import (
     BooleanType, DateType, IntegerType, NumericType, StringType,
     StructField, StructType
@@ -167,6 +167,8 @@ properties = {"user": user, "password": password,
 # print("Write complete!")
 # print(f"Total time: {end-start:0.2f} sec")
 
+app = Flask(__name__)
+
 print("Reading Postgres Table...")
 
 # Read in entire dataset!
@@ -208,8 +210,7 @@ data_list = [{
     'Average Tone': row.AvgTone,
     'Date Added': row.DateAdded,
     'Source URL': row.SourceURL
-} for row in test_query.collect()
-]
+} for row in test_query.collect()]
 end = time()
 print("Done!")
 print(f"Total time: {end-start:0.2f} sec")
@@ -217,18 +218,21 @@ print(f"Total time: {end-start:0.2f} sec")
 spark.stop()
 
 # Create/Start Flask app here
-app = Flask(__name__)
+# app = Flask(__name__)
 
-@app.route('/')
-def run_test_query():
+
+@app.route('/events/president/<sentiment>/')
+def run_test_query(sentiment):
     '''
     Displays just a test query.
     '''
-    # start = time()
-    return jsonify(Data=data_list)
+    
+    if sentiment == 'negative':
+        return jsonify(Data=data_list)
     # for row in test_query.collect():
     #     print(row, '\n')
     # end = time()
+
 
 if __name__ == '__main__':
     app.debug = True
