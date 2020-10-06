@@ -1,8 +1,6 @@
 import datetime
 import os
 
-from flask import jsonify, Flask, request
-
 from pprint import pprint
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
@@ -128,21 +126,21 @@ gdelt_log.createOrReplaceTempView('gdelt_log')  # Create a temp view to query
 # """).show()
 
 # Grab only necessary columns from full dataset, and cast specific types
-test_query = spark.sql("""
-    SELECT
-        INT(GlobalEventID),
-        Date, DAY(Date) AS Day, MONTH(Date) AS Month, YEAR(Date) AS Year,
-        Actor1Code, Actor1Name, Actor2Code, Actor2Name,
-        BOOLEAN(IsRootEvent), EventCode, EventBaseCode, EventRootCode,
-        INT(QuadClass), FLOAT(GoldsteinScale), INT(NumMentions),
-        INT(NumSources), INT(NumArticles), FLOAT(AvgTone),
-        INT(Actor1Geo_Type), Actor1Geo_FullName, Actor1Geo_CountryCode,
-        INT(Actor2Geo_Type), Actor2Geo_FullName, Actor2Geo_CountryCode,
-        Actor1Geo_Lat, Actor1Geo_Long, Actor2Geo_Lat, Actor2Geo_Long,
-        DateAdded, SourceURL
-    FROM gdelt_log
-    WHERE ActionGeo_CountryCode = 'US'
-""")
+# test_query = spark.sql("""
+#     SELECT
+#         INT(GlobalEventID),
+#         Date, DAY(Date) AS Day, MONTH(Date) AS Month, YEAR(Date) AS Year,
+#         Actor1Code, Actor1Name, Actor2Code, Actor2Name,
+#         BOOLEAN(IsRootEvent), EventCode, EventBaseCode, EventRootCode,
+#         INT(QuadClass), FLOAT(GoldsteinScale), INT(NumMentions),
+#         INT(NumSources), INT(NumArticles), FLOAT(AvgTone),
+#         INT(Actor1Geo_Type), Actor1Geo_FullName, Actor1Geo_CountryCode,
+#         INT(Actor2Geo_Type), Actor2Geo_FullName, Actor2Geo_CountryCode,
+#         Actor1Geo_Lat, Actor1Geo_Long, Actor2Geo_Lat, Actor2Geo_Long,
+#         DateAdded, SourceURL
+#     FROM gdelt_log
+#     WHERE ActionGeo_CountryCode = 'US'
+# """)
 
 # print("Schema after cleaning")
 # test_query.printSchema()
@@ -167,13 +165,12 @@ properties = {"user": user, "password": password,
 # print("Write complete!")
 # print(f"Total time: {end-start:0.2f} sec")
 
-app = Flask(__name__)
 
 print("Reading Postgres Table...")
 
 # Read in entire dataset!
 start = time()
-test_df = spark.read.jdbc(url=url, table='events', properties=properties)
+test_df = spark.read.jdbc(url=url, table='presidential', properties=properties)
 end = time()
 
 print("Read complete!")
@@ -183,30 +180,34 @@ print("Final Schema")
 test_df.printSchema()
 
 # Create tempview to query dataset
-test_df.createOrReplaceTempView('events')
+test_df.createOrReplaceTempView('presidential')
 
 # Query the dataset :)
 test_query = spark.sql("""
-    SELECT
-        STRING(Date), Actor1Name, Actor2Name, EventRootCode, EventCode,
-        QuadClass, GoldsteinScale, AvgTone, STRING(DateAdded), SourceURL
-    FROM events
-    WHERE
-        Actor1Name = 'PRESIDENT' AND GoldsteinScale < 0 AND IsRootEvent
-    LIMIT 10
+     SELECT
+         STRING(Date), Actor1Name, Actor2Name, EventRootCode, EventCode,
+         QuadClass, GoldsteinScale, AvgTone, STRING(DateAdded), SourceURL
+     FROM events
+     WHERE
+         Actor1Name = 'PRESIDENT' AND GoldsteinScale < 0 AND IsRootEvent
+     LIMIT 10
 """)
+
 
 print("Running query...")
 start = time()
 
 data_list = [{
+    'Global Event ID': row.GlobalEventID,
     'Date': row.Date,
     'Actor1 Name': row.Actor1Name,
     'Actor2 Name': row.Actor2Name,
-    'Event Root Code': row.EventRootCode,
     'Event Code': row.EventCode,
     'Quad Class': row.QuadClass,
     'Goldstein Scale': row.GoldsteinScale,
+    'Num Mentions': row.NumMentions,
+    'Num Sources': row.NumSources,
+    'Num Articles': row.NumArticles,
     'Average Tone': row.AvgTone,
     'Date Added': row.DateAdded,
     'Source URL': row.SourceURL
@@ -216,25 +217,3 @@ print("Done!")
 print(f"Total time: {end-start:0.2f} sec")
 
 spark.stop()
-
-# Create/Start Flask app here
-# app = Flask(__name__)
-
-
-@app.route('/events/president/<sentiment>/')
-def run_test_query(sentiment):
-    '''
-    Displays just a test query.
-    '''
-    
-    if sentiment == 'negative':
-        return jsonify(Data=data_list)
-    # for row in test_query.collect():
-    #     print(row, '\n')
-    # end = time()
-
-
-if __name__ == '__main__':
-    app.debug = True
-    app.run(host='0.0.0.0', port=5000)
-
