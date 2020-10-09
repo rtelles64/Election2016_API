@@ -3,7 +3,7 @@
 import os
 
 from datetime import date
-from flask import jsonify, Flask, request
+from flask import jsonify, Flask, request, redirect, render_template, url_for
 from flask.json import JSONEncoder  # for date formatting
 from flask_sqlalchemy import SQLAlchemy
 from time import time
@@ -41,99 +41,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # db = SQLAlchemy(app)
 
 
-# class PresidentModel(db.Model):
-#     __tablename__ = ''
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    '''
+    Displays the home page. Contains a form for URL entry.
+    '''
+    if request.method == 'POST':
+        url = request.form['url']
 
-#     globaleventid = db.Column(db.Integer(), primary_key=True)
-#     date = db.Column(db.Date())
-#     actor1name = db.Column(db.Text())
-#     actor2name = db.Column(db.Text())
-#     eventcode = db.Column(db.Text())
-#     quadclass = db.Column(db.Integer())
-#     goldsteinscale = db.Column(db.Float())
-#     nummentions = db.Column(db.Integer())
-#     numsources = db.Column(db.Integer())
-#     numarticles = db.Column(db.Integer())
-#     avgtone = db.Column(db.Float())
-#     sourceurl = db.Column(db.Text())
+        url_route = url.split('/')[2:]
+        url_route[1] = url_route[1][:3]
+        url_route = '_'.join(url_route)
 
-#     def __init__(self, globaleventid, date, actor1name, actor2name, eventcode,
-#                  quadclass, goldsteinscale, nummentions, numsources,
-#                  numarticles, avgtone, sourceurl):
-#         self.event_id = globaleventid
-#         self.date = date
-#         self.actor1_name = actor1name
-#         self.actor2_name = actor2name
-#         self.event_code = eventcode
-#         self.quad_class = quadclass
-#         self.goldstein_scale = goldsteinscale
-#         self.num_mentions = nummentions
-#         self.num_sources = numsources
-#         self.num_articles = numarticles
-#         self.avg_tone = avgtone
-#         self.source_URL = sourceurl
-
-
-# def gather_data(tablename):
-#     '''
-#     Gathers data for delivery.
-
-#     Parameters
-#     ----------
-#     tablename : str
-#         The tablename for the respective query
-
-#     Returns
-#     -------
-#     list
-#         The list generated from the query
-#     '''
-#     PresidentModel.__tablename__ = tablename
-
-#     print("Gathering data...")
-#     start = time()
-#     DATA_LIST = [{
-#         'Event ID': event.globaleventid,
-#         'Date': event.date,
-#         'Actor1 Name': event.actor1name,
-#         'Actor2 Name': event.actor2name,
-#         'Event Code': event.eventcode,
-#         'Quad Class': event.quadclass,
-#         'Goldstein Scale': event.goldsteinscale,
-#         'Num Mentions': event.nummentions,
-#         'Num Sources': event.numsources,
-#         'Num Articles': event.numarticles,
-#         'Average Tone': event.avgtone,
-#         'Source URL': event.sourceurl
-#     } for event in PresidentModel.query.all()]
-#     end = time()
-#     print("Done!")
-#     print(f"Total time: {end-start:0.2f} sec")
-
-#     return DATA_LIST
-
-# FILTERING THE DATA MORE decreases load time...
-# Consider high filtering of data.
-# print("Gathering data...")
-# start = time()
-# DATA_LIST = [{
-#     'Event ID': event.globaleventid,
-#     'Date': event.date,
-#     'Actor1 Name': event.actor1name,
-#     'Actor2 Name': event.actor2name,
-#     'Event Code': event.eventcode,
-#     'Quad Class': event.quadclass,
-#     'Goldstein Scale': event.goldsteinscale,
-#     'Num Mentions': event.nummentions,
-#     'Num Sources': event.numsources,
-#     'Num Articles': event.numarticles,
-#     'Average Tone': event.avgtone,
-#     'Source URL': event.sourceurl
-# } for event in PresidentModel.query.all()]
-# end = time()
-# print("Done!")
-# print(f"Total time: {end-start:0.2f} sec")
-
+        return redirect(url_for(url_route))
+    else:
+        return render_template('home.html')
 
 # Again, include the ending '/' in case the user forgets
 @app.route('/events/president/positive/high/')
@@ -157,7 +79,10 @@ def president_neg_high():
         and_(President.avgtone < 0, President.goldsteinscale > 5)
     )
 
-    return jsonify(HighNegative=[event.serialize for event in negative_impact])
+    return jsonify(HighNegative=[
+         event.serialize for event in negative_impact])
+    # return render_template('president_neg.html',
+    #                        negative_impact=negative_impact)
 
 
 @app.route('/events/police/negative/high/')
@@ -172,8 +97,10 @@ def police_neg_high():
     ))
 
     return jsonify(PoliceImpact=[
-        event.serialize for event in police_impact
+         event.serialize for event in police_impact
     ])
+    #  return render_template('police_results.html',
+    #                        police_impact=police_impact)
 
 
 if __name__ == '__main__':
