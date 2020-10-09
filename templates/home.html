@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>2016 Election API</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<style>
+    .container {
+        padding: 70px 10px;
+    }
+</style>
+<body>
+
+<div class="container">
+  <h2>URL Entry</h2>
+  <p>Enter a URL to query!</p>
+  <p>NOTE: Currently, data is returned in JSON format.
+  <form action="{{ url_for('home') }}" method='POST'>
+    <div class="form-group">
+      <label for="url">URL:</label>
+      <input type="text" class="form-control" id="url" placeholder="Example: /events/president/negative/high" name="url">
+    </div>
+    <button type="submit" class="btn btn-primary">Query!</button>
+  </form>
+</div>
+
+</body>
+</html>
