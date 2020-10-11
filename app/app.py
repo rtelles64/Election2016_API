@@ -13,7 +13,9 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
 # REMEMBER to import the tables you want to query!
-from database_setup import Base, President, Police
+from database_setup import (
+    Base, President, Police, PoliceNeg, PolicePos, PresidentPos, PresidentNeg
+)
 
 engine = create_engine(os.environ['DATABASE_URL'])
 Base.metadata.bind = engine
@@ -63,9 +65,9 @@ def president_pos_high():
     '''
     Displays just a test query.
     '''
-    positive_impact = session.query(President).filter(
-        and_(President.avgtone > 0, President.goldsteinscale > 5)
-    )
+    positive_impact = session.query(PresidentPos).all() # filter(
+    #     and_(President.avgtone > 0, President.goldsteinscale > 5)
+    # )
 
     return jsonify(HighPositive=[event.serialize for event in positive_impact])
 
@@ -75,9 +77,9 @@ def president_neg_high():
     '''
     Displays next test query.
     '''
-    negative_impact = session.query(President).filter(
-        and_(President.avgtone < 0, President.goldsteinscale > 5)
-    )
+    negative_impact = session.query(PresidentNeg).all()  # .filter(
+    #     and_(President.avgtone < 0, President.goldsteinscale > 5)
+    # )
 
     return jsonify(HighNegative=[
          event.serialize for event in negative_impact])
@@ -90,17 +92,28 @@ def police_neg_high():
     '''
     Displays location by state.
     '''
-    police_impact = session.query(Police).filter(and_(
-        Police.AvgTone < 0,
-        Police.GoldsteinScale > 5,
-        Police.IsRootEvent
-    ))
+    police_impact = session.query(PoliceNeg).all()  # filter(and_(
+    #     Police.AvgTone < 0,
+    #     Police.GoldsteinScale > 5,
+    #     Police.IsRootEvent
+    # ))
 
     return jsonify(PoliceImpact=[
          event.serialize for event in police_impact
     ])
     #  return render_template('police_results.html',
     #                        police_impact=police_impact)
+
+@app.route('/events/police/positive/high/')
+def police_pos_high():
+    '''
+    Displays event data where police is actor and reaction is positive.
+    '''
+    police_impact = session.query(PolicePos).all()
+
+    return jsonify(PoliceImpact=[
+        event.serialize for event in police_impact
+    ])
 
 
 if __name__ == '__main__':
