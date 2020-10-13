@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.7
 
 import os
 
@@ -7,6 +7,7 @@ from flask import jsonify, Flask, request, redirect, render_template, url_for
 from flask.json import JSONEncoder  # for date formatting
 from flask_sqlalchemy import SQLAlchemy
 from time import time
+from werkzeug.exceptions import HTTPException
 
 # Add CRUD functionality
 from sqlalchemy import create_engine, and_
@@ -69,7 +70,7 @@ def president_pos_high():
     #     and_(President.avgtone > 0, President.goldsteinscale > 5)
     # )
 
-    return jsonify(HighPositive=[event.serialize for event in positive_impact])
+    return jsonify(PresImpact=[event.serialize for event in positive_impact])
 
 
 @app.route('/events/president/negative/high/')
@@ -81,22 +82,21 @@ def president_neg_high():
     #     and_(President.avgtone < 0, President.goldsteinscale > 5)
     # )
 
-    return jsonify(HighNegative=[
-         event.serialize for event in negative_impact])
+    return jsonify(PresImpact=[
+        event.serialize for event in negative_impact])
     # return render_template('president_neg.html',
     #                        negative_impact=negative_impact)
-
 
 @app.route('/events/police/negative/high/')
 def police_neg_high():
     '''
     Displays location by state.
     '''
-    police_impact = session.query(PoliceNeg).all()  # filter(and_(
-    #     Police.AvgTone < 0,
-    #     Police.GoldsteinScale > 5,
-    #     Police.IsRootEvent
-    # ))
+    police_impact = session.query(PoliceNeg).filter(
+        PoliceNeg.AvgTone < -5
+    #     PoliceNeg.GoldsteinScale > 5,
+    #     PoliceNeg.IsRootEvent
+    )
 
     return jsonify(PoliceImpact=[
          event.serialize for event in police_impact
@@ -118,4 +118,4 @@ def police_pos_high():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=80)
